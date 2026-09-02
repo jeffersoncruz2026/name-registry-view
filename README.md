@@ -50,9 +50,14 @@ bun run dev
 - Painel principal (`/`) com filtros de data/produto, cards das últimas
   cotações à vista, gráfico de evolução, tabela histórica paginada e
   exportação em CSV.
-- Área reservada "Automação CEPEA" (`/configuracoes/automacao`) — hoje é
-  apenas um placeholder; a importação continua manual e o app nunca
-  solicita/armazena credenciais do site da CEPEA.
+- Painel "Automação CEPEA" (`/configuracoes/automacao`) mostrando o status
+  real da coleta automática (última importação, último erro, indicador
+  Atualizado/Pendente e histórico das últimas execuções). A coleta em si é
+  executada por um agente externo (fora deste repositório), que envia os
+  dados para a Edge Function `cepea-collector-ingest` — veja
+  `supabase/functions/cepea-collector-ingest/README.md`. A importação manual
+  continua funcionando normalmente e o app nunca solicita/armazena
+  credenciais do site da CEPEA.
 
 ## Build with Lovable
 
