@@ -14,7 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cepea_cotacoes: {
+        Row: {
+          created_at: string
+          data_cotacao: string
+          id: string
+          importado_em: string
+          maximo_prazo_30d: number | null
+          maximo_vista: number | null
+          minimo_prazo_30d: number | null
+          minimo_vista: number | null
+          nome_arquivo: string | null
+          prazo_medio_pagamento: number | null
+          produto: string
+          regiao: string
+          taxa_cdi_mensal: number | null
+          valor_prazo_30d: number | null
+          valor_vista: number | null
+          variacao_dia_prazo: number | null
+          variacao_dia_vista: number | null
+        }
+        Insert: {
+          created_at?: string
+          data_cotacao: string
+          id?: string
+          importado_em?: string
+          maximo_prazo_30d?: number | null
+          maximo_vista?: number | null
+          minimo_prazo_30d?: number | null
+          minimo_vista?: number | null
+          nome_arquivo?: string | null
+          prazo_medio_pagamento?: number | null
+          produto: string
+          regiao: string
+          taxa_cdi_mensal?: number | null
+          valor_prazo_30d?: number | null
+          valor_vista?: number | null
+          variacao_dia_prazo?: number | null
+          variacao_dia_vista?: number | null
+        }
+        Update: {
+          created_at?: string
+          data_cotacao?: string
+          id?: string
+          importado_em?: string
+          maximo_prazo_30d?: number | null
+          maximo_vista?: number | null
+          minimo_prazo_30d?: number | null
+          minimo_vista?: number | null
+          nome_arquivo?: string | null
+          prazo_medio_pagamento?: number | null
+          produto?: string
+          regiao?: string
+          taxa_cdi_mensal?: number | null
+          valor_prazo_30d?: number | null
+          valor_vista?: number | null
+          variacao_dia_prazo?: number | null
+          variacao_dia_vista?: number | null
+        }
+        Relationships: []
+      }
+      cepea_importacoes: {
+        Row: {
+          data_cotacao: string | null
+          id: string
+          importado_em: string
+          mensagem: string | null
+          nome_arquivo: string | null
+          quantidade_registros: number | null
+          status: string
+        }
+        Insert: {
+          data_cotacao?: string | null
+          id?: string
+          importado_em?: string
+          mensagem?: string | null
+          nome_arquivo?: string | null
+          quantidade_registros?: number | null
+          status: string
+        }
+        Update: {
+          data_cotacao?: string | null
+          id?: string
+          importado_em?: string
+          mensagem?: string | null
+          nome_arquivo?: string | null
+          quantidade_registros?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
