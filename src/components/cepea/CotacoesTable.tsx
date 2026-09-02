@@ -15,21 +15,26 @@ import {
   formatarDataHoraBr,
   formatarNumeroBr,
   formatarPercentualBr,
+  formatarTaxaCdiBr,
 } from "@/lib/cepea/numberParser";
 import type { CepeaCotacao } from "@/lib/cepea/types";
 import { TAMANHO_PAGINA } from "@/hooks/useCepeaCotacoes";
 
-const COLUNAS_NUMERICAS: { chave: keyof CepeaCotacao; rotulo: string; percentual?: boolean }[] = [
+const COLUNAS_NUMERICAS: {
+  chave: keyof CepeaCotacao;
+  rotulo: string;
+  formatador?: (valor: number | null) => string;
+}[] = [
   { chave: "valor_vista", rotulo: "Vst(1)" },
-  { chave: "variacao_dia_vista", rotulo: "VarDiaV(1)", percentual: true },
+  { chave: "variacao_dia_vista", rotulo: "VarDiaV(1)", formatador: formatarPercentualBr },
   { chave: "minimo_vista", rotulo: "MinV(2)" },
   { chave: "maximo_vista", rotulo: "MaxV(3)" },
   { chave: "valor_prazo_30d", rotulo: "Prz(4)Ref30d" },
-  { chave: "variacao_dia_prazo", rotulo: "VarDiaP(4)", percentual: true },
+  { chave: "variacao_dia_prazo", rotulo: "VarDiaP(4)", formatador: formatarPercentualBr },
   { chave: "minimo_prazo_30d", rotulo: "MinP(5)Ref30d" },
   { chave: "maximo_prazo_30d", rotulo: "MaxP(6)Ref30d" },
   { chave: "prazo_medio_pagamento", rotulo: "Pmp(7)" },
-  { chave: "taxa_cdi_mensal", rotulo: "CDI Mensal", percentual: true },
+  { chave: "taxa_cdi_mensal", rotulo: "CDI Mensal", formatador: formatarTaxaCdiBr },
 ];
 
 export function CotacoesTable({
@@ -100,9 +105,10 @@ export function CotacoesTable({
                   <TableCell className="whitespace-nowrap font-medium">{linha.produto}</TableCell>
                   {COLUNAS_NUMERICAS.map((coluna) => {
                     const valor = linha[coluna.chave] as number | null;
+                    const formatar = coluna.formatador ?? formatarNumeroBr;
                     return (
                       <TableCell key={String(coluna.chave)} className="text-right tabular-nums">
-                        {coluna.percentual ? formatarPercentualBr(valor) : formatarNumeroBr(valor)}
+                        {formatar(valor)}
                       </TableCell>
                     );
                   })}

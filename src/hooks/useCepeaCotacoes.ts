@@ -67,7 +67,7 @@ export function useCotacoesGrafico(filtros: FiltrosCotacoes) {
     queryFn: async () => {
       let query = supabase
         .from("cepea_cotacoes")
-        .select("data_cotacao, produto, valor_vista")
+        .select("data_cotacao, produto, valor_vista, variacao_dia_vista")
         .eq("regiao", REGIAO_ALVO)
         .order("data_cotacao", { ascending: true })
         .limit(2000);
@@ -78,7 +78,10 @@ export function useCotacoesGrafico(filtros: FiltrosCotacoes) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data ?? []) as Pick<CepeaCotacao, "data_cotacao" | "produto" | "valor_vista">[];
+      return (data ?? []) as Pick<
+        CepeaCotacao,
+        "data_cotacao" | "produto" | "valor_vista" | "variacao_dia_vista"
+      >[];
     },
   });
 }

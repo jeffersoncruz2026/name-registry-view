@@ -19,7 +19,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { extrairCepeaPdf, type ResultadoExtracaoCepea } from "@/lib/cepea/pdfParser";
-import { formatarDataBr, formatarNumeroBr, formatarPercentualBr } from "@/lib/cepea/numberParser";
+import {
+  formatarDataBr,
+  formatarNumeroBr,
+  formatarPercentualBr,
+  formatarTaxaCdiBr,
+} from "@/lib/cepea/numberParser";
 import { REGIAO_ALVO, type CepeaCotacaoInsert } from "@/lib/cepea/types";
 import { supabase } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -220,7 +225,7 @@ export function ImportPdfDialog({
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Taxa CDI (Mensal)</p>
-                <p className="font-medium">{formatarPercentualBr(resultado.taxaCdiMensal)}</p>
+                <p className="font-medium">{formatarTaxaCdiBr(resultado.taxaCdiMensal)}</p>
               </div>
             </div>
 

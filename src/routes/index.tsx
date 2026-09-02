@@ -8,7 +8,7 @@ import { CotacaoChart } from "@/components/cepea/CotacaoChart";
 import { CotacoesTable } from "@/components/cepea/CotacoesTable";
 import { FiltrosPainel } from "@/components/cepea/FiltrosPainel";
 import { ImportPdfDialog } from "@/components/cepea/ImportPdfDialog";
-import { PRODUTOS_CEPEA } from "@/lib/cepea/types";
+import { PRODUTOS_CEPEA, type ProdutoCepea } from "@/lib/cepea/types";
 import { baixarCsv, gerarCsvCotacoes } from "@/lib/cepea/csv";
 import {
   buscarTodasCotacoesParaExportacao,
@@ -48,10 +48,15 @@ function PainelPrincipal() {
   const [pagina, setPagina] = useState(0);
   const [dialogAberto, setDialogAberto] = useState(false);
   const [exportando, setExportando] = useState(false);
+  const [produtoGrafico, setProdutoGrafico] = useState<ProdutoCepea>("Boi Gordo");
 
   const ultimasCotacoes = useUltimasCotacoes();
   const historico = useCotacoesHistorico(filtros, pagina);
-  const grafico = useCotacoesGrafico(filtros);
+  const grafico = useCotacoesGrafico({
+    dataInicial: filtros.dataInicial,
+    dataFinal: filtros.dataFinal,
+    produto: produtoGrafico,
+  });
 
   function atualizarFiltros(novosFiltros: FiltrosCotacoes) {
     setFiltros(novosFiltros);
@@ -109,7 +114,8 @@ function PainelPrincipal() {
       <CotacaoChart
         dados={grafico.data ?? []}
         carregando={grafico.isLoading}
-        produtoUnico={filtros.produto !== "todos" ? filtros.produto : null}
+        produto={produtoGrafico}
+        onProdutoChange={setProdutoGrafico}
       />
 
       <CotacoesTable

@@ -1,64 +1,90 @@
 import { useMemo } from "react";
 import {
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  type TooltipProps,
 } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PRODUTOS_CEPEA, type CepeaCotacao } from "@/lib/cepea/types";
-import { formatarDataBr, formatarMoedaBr } from "@/lib/cepea/numberParser";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { PRODUTOS_CEPEA, type CepeaCotacao, type ProdutoCepea } from "@/lib/cepea/types";
+import { formatarDataBr, formatarMoedaBr, formatarPercentualBr } from "@/lib/cepea/numberParser";
 
-const CORES_PRODUTO: Record<string, string> = {
-  "Boi Gordo": "var(--color-primary)",
-  "Vaca Gorda": "var(--color-accent)",
-  "Boi Magro": "oklch(0.62 0.15 60)",
-  Bezerro: "oklch(0.55 0.18 20)",
-};
+type PontoGrafico = Pick<
+  CepeaCotacao,
+  "data_cotacao" | "produto" | "valor_vista" | "variacao_dia_vista"
+>;
 
-type PontoGrafico = Pick<CepeaCotacao, "data_cotacao" | "produto" | "valor_vista">;
+function TooltipGrafico({ active, payload }: TooltipProps<number, string>) {
+  if (!active || !payload || payload.length === 0) return null;
+  const ponto = payload[0]?.payload as PontoGrafico | undefined;
+  if (!ponto) return null;
+
+  return (
+    <div className="rounded-md border border-border bg-card px-3 py-2 text-xs shadow-sm">
+      <p className="font-medium text-foreground">
+        {formatarDataBr(ponto.data_cotacao)} — {ponto.produto}
+      </p>
+      <p className="mt-1 text-muted-foreground">
+        Valor à vista:{" "}
+        <span className="tabular-nums text-foreground">{formatarMoedaBr(ponto.valor_vista)}</span>
+      </p>
+      <p className="text-muted-foreground">
+        Variação diária:{" "}
+        <span className="tabular-nums text-foreground">
+          {formatarPercentualBr(ponto.variacao_dia_vista)}
+        </span>
+      </p>
+    </div>
+  );
+}
 
 export function CotacaoChart({
   dados,
   carregando,
-  produtoUnico,
+  produto,
+  onProdutoChange,
 }: {
   dados: PontoGrafico[];
   carregando: boolean;
-  produtoUnico: string | null;
+  produto: ProdutoCepea;
+  onProdutoChange: (produto: ProdutoCepea) => void;
 }) {
-  const { serie, produtos } = useMemo(() => {
-    const porData = new Map<string, Record<string, number | string>>();
-    const produtosPresentes = new Set<string>();
-
-    for (const ponto of dados) {
-      if (ponto.valor_vista == null) continue;
-      produtosPresentes.add(ponto.produto);
-      const existente = porData.get(ponto.data_cotacao) ?? { data: ponto.data_cotacao };
-      existente[ponto.produto] = ponto.valor_vista;
-      porData.set(ponto.data_cotacao, existente);
-    }
-
-    const serieOrdenada = Array.from(porData.values()).sort((a, b) =>
-      String(a["data"]).localeCompare(String(b["data"])),
-    );
-
-    const produtosOrdenados = PRODUTOS_CEPEA.filter((p) => produtosPresentes.has(p));
-
-    return { serie: serieOrdenada, produtos: produtosOrdenados };
-  }, [dados]);
+  const serie = useMemo(
+    () =>
+      dados
+        .filter((p) => p.valor_vista != null)
+        .sort((a, b) => a.data_cotacao.localeCompare(b.data_cotacao)),
+    [dados],
+  );
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">
-          Evolução do valor à vista{produtoUnico ? ` — ${produtoUnico}` : ""}
-        </CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+        <CardTitle className="text-base">Evolução do valor à vista</CardTitle>
+        <Select value={produto} onValueChange={(valor) => onProdutoChange(valor as ProdutoCepea)}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PRODUTOS_CEPEA.map((p) => (
+              <SelectItem key={p} value={p}>
+                {p}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent>
         {carregando ? (
@@ -67,46 +93,34 @@ export function CotacaoChart({
           </div>
         ) : serie.length === 0 ? (
           <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
-            Nenhuma cotação para exibir no período selecionado.
+            Nenhuma cotação de {produto} para exibir no período selecionado.
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={288}>
             <LineChart data={serie} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis
-                dataKey="data"
+                dataKey="data_cotacao"
                 tickFormatter={(valor: string) => formatarDataBr(valor)}
                 tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
                 minTickGap={24}
               />
               <YAxis
+                domain={["auto", "auto"]}
                 tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
                 tickFormatter={(valor: number) =>
                   new Intl.NumberFormat("pt-BR", { notation: "compact" }).format(valor)
                 }
                 width={56}
               />
-              <Tooltip
-                labelFormatter={(valor) => formatarDataBr(String(valor))}
-                formatter={(valor: number, nome: string) => [formatarMoedaBr(valor), nome]}
-                contentStyle={{
-                  backgroundColor: "var(--color-card)",
-                  borderColor: "var(--color-border)",
-                  fontSize: 12,
-                }}
+              <Tooltip content={<TooltipGrafico />} />
+              <Line
+                type="monotone"
+                dataKey="valor_vista"
+                stroke="var(--color-primary)"
+                strokeWidth={2}
+                dot={false}
               />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              {produtos.map((produto) => (
-                <Line
-                  key={produto}
-                  type="monotone"
-                  dataKey={produto}
-                  stroke={CORES_PRODUTO[produto] ?? "var(--color-primary)"}
-                  strokeWidth={2}
-                  dot={false}
-                  connectNulls
-                />
-              ))}
             </LineChart>
           </ResponsiveContainer>
         )}

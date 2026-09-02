@@ -1,5 +1,5 @@
 import { PRODUTOS_CEPEA, REGIAO_ALVO, type ProdutoCepea } from "./types";
-import { parseNumeroBr } from "./numberParser";
+import { parseNumeroBr, parseTaxaCdiMensal } from "./numberParser";
 
 export type CepeaProdutoExtraido = {
   produto: ProdutoCepea;
@@ -29,6 +29,7 @@ export type ResultadoExtracaoCepea = {
 type LinhaExtraida = {
   texto: string;
   y: number;
+  pagina: number;
 };
 
 /** Remove acentos, espaços e pontuação; deixa só letras/dígitos maiúsculos, para comparação tolerante. */
@@ -90,7 +91,7 @@ async function extrairLinhasDoPdf(arquivo: File): Promise<LinhaExtraida[]> {
         .replace(/\s+/g, " ")
         .trim();
       if (texto.length > 0) {
-        linhas.push({ texto, y: ordenado[0]?.y ?? 0 });
+        linhas.push({ texto, y: ordenado[0]?.y ?? 0, pagina: numeroPagina });
       }
     }
   }
@@ -126,13 +127,36 @@ function extrairDataCotacao(textoCompleto: string, avisos: string[]): string | n
   return `${ano}-${mes}-${dia}`;
 }
 
-/** Extrai a "Taxa Referencial CDI(Mensal)". */
-function extrairTaxaCdiMensal(textoCompleto: string): number | null {
-  const regexCdi =
-    /Taxa\s+Referencial\s+CDI\s*\(\s*Mensal\s*\)[^\d-]{0,20}(-?\d[\d.,]*\s*%?|nd\s*%?)/i;
-  const match = textoCompleto.match(regexCdi);
-  if (!match?.[1]) return null;
-  return parseNumeroBr(match[1]);
+const REGEX_TAXA_CDI =
+  /Taxa\s+Referencial\s+CDI\s*\(\s*Mensal\s*\)[^\d-]{0,20}(-?\d+(?:[.,]\d+)?\s*%?|nd\s*%?)/i;
+
+/**
+ * Extrai a "Taxa Referencial CDI(Mensal)" correspondente à página onde a
+ * região alvo foi encontrada (cada página do compacto pode trazer uma taxa
+ * diferente). Cai para uma busca no documento inteiro apenas se a página da
+ * região não tiver essa informação.
+ */
+function extrairTaxaCdiMensal(
+  linhas: LinhaExtraida[],
+  paginaRegiao: number | null,
+  avisos: string[],
+): number | null {
+  if (paginaRegiao != null) {
+    const textoPagina = linhas
+      .filter((l) => l.pagina === paginaRegiao)
+      .map((l) => l.texto)
+      .join("\n");
+    const matchPagina = textoPagina.match(REGEX_TAXA_CDI);
+    if (matchPagina?.[1]) return parseTaxaCdiMensal(matchPagina[1]);
+  }
+
+  avisos.push(
+    `Não foi possível localizar a "Taxa Referencial CDI(Mensal)" na página da região ${REGIAO_ALVO}; ` +
+      "usando a primeira ocorrência encontrada no documento.",
+  );
+  const textoCompleto = linhas.map((l) => l.texto).join("\n");
+  const matchGlobal = textoCompleto.match(REGEX_TAXA_CDI);
+  return matchGlobal?.[1] ? parseTaxaCdiMensal(matchGlobal[1]) : null;
 }
 
 /** Se as primeiras palavras da linha correspondem à região alvo, retorna os tokens restantes. */
@@ -233,7 +257,7 @@ function montarProdutoExtraido(
 function extrairProdutosRegiaoAlvo(
   linhas: LinhaExtraida[],
   avisos: string[],
-): { produtos: CepeaProdutoExtraido[]; regiaoTextoOriginal: string | null } {
+): { produtos: CepeaProdutoExtraido[]; regiaoTextoOriginal: string | null; pagina: number | null } {
   const produtos: CepeaProdutoExtraido[] = [];
   let regiaoTextoOriginal: string | null = null;
   let indiceInicio = -1;
@@ -256,8 +280,10 @@ function extrairProdutosRegiaoAlvo(
   }
 
   if (indiceInicio === -1) {
-    return { produtos: [], regiaoTextoOriginal: null };
+    return { produtos: [], regiaoTextoOriginal: null, pagina: null };
   }
+
+  const paginaRegiao = linhas[indiceInicio]?.pagina ?? null;
 
   const LIMITE_LINHAS_VARREDURA = 30;
   for (
@@ -285,7 +311,7 @@ function extrairProdutosRegiaoAlvo(
     produtos.push(montarProdutoExtraido(combinado.produto, numeros, linha.texto, avisos));
   }
 
-  return { produtos, regiaoTextoOriginal };
+  return { produtos, regiaoTextoOriginal, pagina: paginaRegiao };
 }
 
 export async function extrairCepeaPdf(arquivo: File): Promise<ResultadoExtracaoCepea> {
@@ -309,8 +335,8 @@ export async function extrairCepeaPdf(arquivo: File): Promise<ResultadoExtracaoC
     }
 
     const dataCotacao = extrairDataCotacao(textoCompleto, avisos);
-    const taxaCdiMensal = extrairTaxaCdiMensal(textoCompleto);
-    const { produtos, regiaoTextoOriginal } = extrairProdutosRegiaoAlvo(linhas, avisos);
+    const { produtos, regiaoTextoOriginal, pagina } = extrairProdutosRegiaoAlvo(linhas, avisos);
+    const taxaCdiMensal = extrairTaxaCdiMensal(linhas, pagina, avisos);
 
     if (produtos.length === 0) {
       return {
