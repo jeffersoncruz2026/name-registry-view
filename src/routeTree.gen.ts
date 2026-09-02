@@ -10,33 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ImportacoesRouteImport } from './routes/importacoes'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ConfiguracoesAutomacaoRouteImport } from './routes/configuracoes/automacao'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ImportacoesRoute = ImportacoesRouteImport.update({
+  id: '/importacoes',
+  path: '/importacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesAutomacaoRoute = ConfiguracoesAutomacaoRouteImport.update({
+  id: '/configuracoes/automacao',
+  path: '/configuracoes/automacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/importacoes': typeof ImportacoesRoute
+  '/login': typeof LoginRoute
+  '/configuracoes/automacao': typeof ConfiguracoesAutomacaoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/importacoes': typeof ImportacoesRoute
+  '/login': typeof LoginRoute
+  '/configuracoes/automacao': typeof ConfiguracoesAutomacaoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/importacoes': typeof ImportacoesRoute
+  '/login': typeof LoginRoute
+  '/configuracoes/automacao': typeof ConfiguracoesAutomacaoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/importacoes' | '/login' | '/configuracoes/automacao'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/importacoes' | '/login' | '/configuracoes/automacao'
+  id: '__root__' | '/' | '/importacoes' | '/login' | '/configuracoes/automacao'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ImportacoesRoute: typeof ImportacoesRoute
+  LoginRoute: typeof LoginRoute
+  ConfiguracoesAutomacaoRoute: typeof ConfiguracoesAutomacaoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +78,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/importacoes': {
+      id: '/importacoes'
+      path: '/importacoes'
+      fullPath: '/importacoes'
+      preLoaderRoute: typeof ImportacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes/automacao': {
+      id: '/configuracoes/automacao'
+      path: '/configuracoes/automacao'
+      fullPath: '/configuracoes/automacao'
+      preLoaderRoute: typeof ConfiguracoesAutomacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ImportacoesRoute: ImportacoesRoute,
+  LoginRoute: LoginRoute,
+  ConfiguracoesAutomacaoRoute: ConfiguracoesAutomacaoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
